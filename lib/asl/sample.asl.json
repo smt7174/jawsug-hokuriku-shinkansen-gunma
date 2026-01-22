@@ -1,0 +1,84 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Scan - get treasures",
+  "States": {
+    "Scan - get treasures": {
+      "Type": "Task",
+      "Arguments": {
+        "TableName": "MyData"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:dynamodb:scan",
+      "Next": "Parallel"
+    },
+    "Parallel": {
+      "Type": "Parallel",
+      "Next": "Pass - check retry behavior step",
+      "Branches": [
+        {
+          "StartAt": "Map",
+          "States": {
+            "Map": {
+              "Type": "Map",
+              "ItemProcessor": {
+                "ProcessorConfig": {
+                  "Mode": "INLINE"
+                },
+                "StartAt": "Pass  - output treasure name and effect",
+                "States": {
+                  "Pass  - output treasure name and effect": {
+                    "Type": "Pass",
+                    "End": true
+                  }
+                }
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Map (1)",
+          "States": {
+            "Map (1)": {
+              "Type": "Map",
+              "ItemProcessor": {
+                "ProcessorConfig": {
+                  "Mode": "INLINE"
+                },
+                "StartAt": "Choice - if treasure is necessary or not",
+                "States": {
+                  "Choice - if treasure is necessary or not": {
+                    "Type": "Choice",
+                    "Choices": [
+                      {
+                        "Next": "Pass - output the treasure of the floor is necessary"
+                      }
+                    ],
+                    "Default": "Pass - output the treasure of the floor is not necessary"
+                  },
+                  "Pass - output the treasure of the floor is necessary": {
+                    "Type": "Pass",
+                    "End": true
+                  },
+                  "Pass - output the treasure of the floor is not necessary": {
+                    "Type": "Pass",
+                    "End": true
+                  }
+                }
+              },
+              "End": true
+            }
+          }
+        }
+      ]
+    },
+    "Pass - check retry behavior step": {
+      "Type": "Pass",
+      "End": true,
+      "Output": {
+        "timestamp": "{% $now() %}",
+        "input": "{% $states.input %}"
+      }
+    }
+  },
+  "QueryLanguage": "JSONata"
+}
