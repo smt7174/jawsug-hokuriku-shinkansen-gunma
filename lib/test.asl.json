@@ -1,0 +1,43 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Call HTTPS APIs",
+  "States": {
+    "Call HTTPS APIs": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::http:invoke",
+      "Arguments": {
+        "InvocationConfig": {
+          "ConnectionArn": "abcdef"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "BackoffRate": 2,
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Choice"
+    },
+    "Choice": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "成功"
+        }
+      ],
+      "Default": "Fail"
+    },
+    "成功": {
+      "Type": "Succeed"
+    },
+    "Fail": {
+      "Type": "Fail"
+    }
+  },
+  "QueryLanguage": "JSONata"
+}
