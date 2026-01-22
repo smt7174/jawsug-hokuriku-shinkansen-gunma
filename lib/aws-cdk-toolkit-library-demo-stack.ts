@@ -12,7 +12,7 @@ import {
   MethodLoggingLevel,
   CfnAccount,
   AwsIntegration,
-} from "aws-cdk-lib/aws-apigateway";
+} from 'aws-cdk-lib/aws-apigateway';
 import {
   PolicyDocument,
   PolicyStatement,
@@ -21,11 +21,17 @@ import {
   ServicePrincipal,
   StarPrincipal,
   ManagedPolicy,
-} from "aws-cdk-lib/aws-iam";
-import { StateMachine, DefinitionBody, QueryLanguage, LogLevel, StateMachineType } from 'aws-cdk-lib/aws-stepfunctions';
+} from 'aws-cdk-lib/aws-iam';
+import {
+  StateMachine,
+  DefinitionBody,
+  QueryLanguage,
+  LogLevel,
+  StateMachineType,
+} from 'aws-cdk-lib/aws-stepfunctions';
 import path from 'node:path';
 
-const DURABLE_FUNCTION_ALIAS = "latest";
+const DURABLE_FUNCTION_ALIAS = 'latest';
 export class AwsCdkToolkitLibraryDemoStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -33,11 +39,15 @@ export class AwsCdkToolkitLibraryDemoStack extends cdk.Stack {
     const durableRole = new Role(this, 'DurableFunctionRole', {
       assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
       managedPolicies: [
-        ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
-        ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicDurableExecutionRolePolicy'),
+        ManagedPolicy.fromAwsManagedPolicyName(
+          'service-role/AWSLambdaBasicExecutionRole'
+        ),
+        ManagedPolicy.fromAwsManagedPolicyName(
+          'service-role/AWSLambdaBasicDurableExecutionRolePolicy'
+        ),
       ],
     });
-    
+
     // Durable Functionの定義
     const durableFunc = new NodejsFunction(this, 'DurableFunction', {
       entry: path.resolve(__dirname, '../lambda/durable.ts'),
@@ -52,20 +62,22 @@ export class AwsCdkToolkitLibraryDemoStack extends cdk.Stack {
       }),
       durableConfig: {
         executionTimeout: cdk.Duration.minutes(15),
-        retentionPeriod:cdk.Duration.days(1)
+        retentionPeriod: cdk.Duration.days(1),
       },
       role: durableRole,
     });
-    
+
     const durableFuncAlias = durableFunc.addAlias(DURABLE_FUNCTION_ALIAS);
 
-    durableFunc.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN_ON_UPDATE_OR_DELETE);
+    durableFunc.applyRemovalPolicy(
+      cdk.RemovalPolicy.RETAIN_ON_UPDATE_OR_DELETE
+    );
 
     const policy = new PolicyDocument({
       statements: [
         new PolicyStatement({
           effect: Effect.ALLOW,
-          actions: ["execute-api:Invoke"],
+          actions: ['execute-api:Invoke'],
           principals: [new StarPrincipal()],
           resources: [`arn:aws:execute-api:${this.region}:${this.account}:*`],
         }),
@@ -88,39 +100,46 @@ export class AwsCdkToolkitLibraryDemoStack extends cdk.Stack {
       },
       policy,
     });
-    
-     restApi.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN_ON_UPDATE_OR_DELETE);
-    
-        // API GatewayのAPI->設定にある「ログ記録」にあるCloudWatchロールARNの設定
+
+    restApi.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN_ON_UPDATE_OR_DELETE);
+
+    // API GatewayのAPI->設定にある「ログ記録」にあるCloudWatchロールARNの設定
     // FYI: https://kakakakakku.hatenablog.com/entry/2024/11/08/131847
     const cfnAccountRole = new Role(this, `ApiGatewayCloudWatchLogsRole`, {
-      assumedBy: new ServicePrincipal("apigateway.amazonaws.com"),
-      managedPolicies: [ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonAPIGatewayPushToCloudWatchLogs")],
+      assumedBy: new ServicePrincipal('apigateway.amazonaws.com'),
+      managedPolicies: [
+        ManagedPolicy.fromAwsManagedPolicyName(
+          'service-role/AmazonAPIGatewayPushToCloudWatchLogs'
+        ),
+      ],
       maxSessionDuration: cdk.Duration.hours(1),
     });
 
     new CfnAccount(this, `ApiGatewayCfnAccount`, {
       cloudWatchRoleArn: cfnAccountRole.roleArn,
     });
-    
+
     // API Gatewayにリクエスト先のリソースを追加
     const demoResource = restApi.root.addResource('demo');
     const durableResource = restApi.root.addResource('durable');
     const durableResource2 = restApi.root.addResource('durable2');
     // リソースにGETメソッド、Lambda統合プロキシを指定
-    demoResource.addMethod("POST", new LambdaIntegration(demoFunc));
-    durableResource.addMethod("POST", new LambdaIntegration(durableFunc));
-    durableResource2.addMethod("POST", new LambdaIntegration(durableFunc2));
+    durableResource.addMethod('POST', new LambdaIntegration(durableFunc));
 
-
-    const smLogGroup = new cdk.aws_logs.LogGroup(this, 'DemoStateMachineLogGroup', {
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      retention: cdk.aws_logs.RetentionDays.ONE_WEEK,
-    });
+    const smLogGroup = new cdk.aws_logs.LogGroup(
+      this,
+      'DemoStateMachineLogGroup',
+      {
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        retention: cdk.aws_logs.RetentionDays.ONE_WEEK,
+      }
+    );
 
     const stateMachine = new StateMachine(this, 'DemoStateMachine', {
       comment: '検証用のDemoステートマシン',
-      definitionBody: DefinitionBody.fromFile(path.resolve(__dirname, './asl/demo-state-machine.asl.json')),
+      definitionBody: DefinitionBody.fromFile(
+        path.resolve(__dirname, './asl/demo-state-machine.asl.json')
+      ),
       logs: {
         destination: smLogGroup,
         level: LogLevel.ALL,
@@ -131,10 +150,9 @@ export class AwsCdkToolkitLibraryDemoStack extends cdk.Stack {
       stateMachineType: StateMachineType.EXPRESS,
     });
 
-    new cdk.CfnOutput(this, 'functionArn', {
-      value: demoFunc.functionArn,
-    });
-
-    cdk.Tags.of(this).add('GITHUB_REPO_URL', 'https://github.com/smt7174/jaws-cdk-event-19')
+    cdk.Tags.of(this).add(
+      'GITHUB_REPO_URL',
+      'https://github.com/smt7174/jaws-cdk-event-19'
+    );
   }
 }

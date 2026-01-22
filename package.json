@@ -26,7 +26,7 @@
     "@aws-cdk/toolkit-lib": "^1.8.0",
     "@aws-sdk/client-lambda": "^3.821.0",
     "@aws/durable-execution-sdk-js": "^1.0.1",
-    "aws-cdk-lib": "2.232.0",
+    "aws-cdk-lib": "^2.232.0",
     "colors": "^1.4.0",
     "constructs": "^10.0.0"
   }
