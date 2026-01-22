@@ -16,6 +16,3 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 https://docs.aws.amazon.com/cdk/v2/guide/toolkit-library.html
 https://community.aws/content/2wm6TNpUlPMVgcvXVySywxWaO7T/build-custom-cli-s-deployment-automation-and-more-with-the-aws-cdk-toolkit-library
 https://go-to-k.hatenablog.com/entry/cdk-toolkit-cli-comparison
-
-
-# aws lambda invoke --function-name arn:aws:lambda:ap-northeast-1:659547760577:function:CdkToolkitDurableFunction:latest --cli-binary-format raw-in-base64-out --payload '{}' durable.json
